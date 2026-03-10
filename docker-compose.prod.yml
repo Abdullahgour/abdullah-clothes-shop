@@ -1,0 +1,8 @@
+services:
+  
+
+  web:
+   
+   image: ${DOCKERHUB_USER}/abdullah-shop:${DOCKER_TAG}
+   ports:
+     - "80:3000"

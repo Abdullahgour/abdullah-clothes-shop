@@ -1,0 +1,70 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+
+    - name: Install Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+
+    - name: Install dependencies
+      run: npm install
+
+
+    - name: Run Security Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: fs
+        severity: CRITICAL,HIGH
+
+
+    - name: Login DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ vars.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+         context: .
+         push: true
+         
+         tags: | 
+           ${{ vars.DOCKERHUB_USER }}/abdullah-shop:${{ github.ref_name }}
+           ${{ vars.DOCKERHUB_USER }}/abdullah-shop:latest
+           ${{ vars.DOCKERHUB_USER }}/abdullah-shop:${{ github.sha }}
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1
+      with:
+       host: ${{ secrets.EC2_HOST }}
+       username: ${{ secrets.EC2_USER }}
+       key: ${{ secrets.EC2_KEY }}
+       script: |
+
+            export DOCKERHUB_USER=${{ vars.DOCKERHUB_USER }}
+
+            export DOCKER_TAG=${{ github.sha }}
+            echo ${{secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ vars.DOCKERHUB_USER }} --password-stdin
+
+            docker pull ${{ vars.DOCKERHUB_USER }}/abdullah-shop:${{ github.sha }}
+            docker stop shop || true
+            docker rm shop || true
+            docker run -d -p 80:3000 --name shop ${{ vars.DOCKERHUB_USER }}/abdullah-shop:${{ github.sha }}      
