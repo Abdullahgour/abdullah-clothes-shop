@@ -1,0 +1,48 @@
+body{
+background: linear-gradient(120deg,#141e30,#243b55);
+font-family: 'Segoe UI',sans-serif;
+}
+
+/* Hero section */
+
+.hero{
+padding:80px;
+background:linear-gradient(to right,#ff7e5f,#feb47b);
+margin-bottom:40px;
+}
+
+/* Product cards */
+
+.product-card{
+border:none;
+border-radius:15px;
+overflow:hidden;
+transition:0.3s;
+box-shadow:0 8px 20px rgba(0,0,0,0.2);
+}
+
+.product-card:hover{
+transform:translateY(-10px);
+box-shadow:0 20px 30px rgba(0,0,0,0.3);
+}
+
+.card-img-top{
+height:250px;
+object-fit:cover;
+}
+
+/* Price */
+
+.price{
+font-size:22px;
+font-weight:bold;
+color:#ff4b2b;
+}
+
+/* Footer */
+
+.footer{
+background:#111;
+padding:20px;
+margin-top:40px;
+}
