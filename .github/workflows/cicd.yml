@@ -52,19 +52,45 @@ jobs:
            ${{ vars.DOCKERHUB_USER }}/abdullah-shop:${{ github.sha }}
 
     - name: Deploy to EC2
+    
+      uses: actions/checkout@v4
+     
+     
+    - name: SSH to prod server & create app folder 
       uses: appleboy/ssh-action@v1
       with:
-       host: ${{ secrets.EC2_HOST }}
-       username: ${{ secrets.EC2_USER }}
-       key: ${{ secrets.EC2_KEY }}
-       script: |
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+       
+          script: |
+            echo "Starting deployement & package install"
+            sudo apt-get update && sudo apt-get install docker.io docker-compose-v2 -y
+            sudo usermod -aG docker $USER && newgrp docker 
+            mkdir -p devops
 
+    - name: Copy docker compose files via SSH
+      uses: appleboy/scp-action@v1
+      with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          
+          source: docker-compose.prod.yml
+          target: ~/devops    
+
+    - name: SSH to prod server & run the app 
+      uses: appleboy/ssh-action@v1
+      with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          
+          script: |
+            echo "running app"
+          
             export DOCKERHUB_USER=${{ vars.DOCKERHUB_USER }}
 
             export DOCKER_TAG=${{ github.sha }}
             echo ${{secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ vars.DOCKERHUB_USER }} --password-stdin
-
-            docker pull ${{ vars.DOCKERHUB_USER }}/abdullah-shop:${{ github.sha }}
-            docker stop shop || true
-            docker rm shop || true
-            docker run -d -p 80:3000 --name shop ${{ vars.DOCKERHUB_USER }}/abdullah-shop:${{ github.sha }}      
+            cd ~/devops && docker compose down && docker compose up -d --force-recreate --pull always
