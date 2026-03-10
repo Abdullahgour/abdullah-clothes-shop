@@ -1,0 +1,9 @@
+version: "3"
+
+services:
+  web:
+    build: .
+    image: abdullahgour/abdullah-shop:v1
+    container_name: abdullah-shop
+    ports:
+      - "80:3000"
